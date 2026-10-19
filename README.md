@@ -35,9 +35,9 @@ include native binaries and npm tarballs. The shell installer is:
 curl -fsSL https://raw.githubusercontent.com/rafay0342/homebrew-tap/main/get.sh | sh
 ```
 
-It verifies the release signature and checksum; signature verification requires
-an OpenSSL build supporting Ed25519. On macOS, Homebrew or npm avoids this
-extra requirement. Set `RGX_INSTALL_DIR` to choose the installation directory.
+It verifies the release signature and checksum using the system OpenSSL or
+LibreSSL, including macOS built-in tools. The agent runs as a direct native
+binary without Node, Python, Rust or Homebrew. Set `RGX_INSTALL_DIR` to choose the installation directory.
 If it is outside PATH, add that directory to your shell profile.
 
 ## Account and provider access

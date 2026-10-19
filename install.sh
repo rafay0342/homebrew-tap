@@ -48,6 +48,12 @@ RGX_PUBKEY_NEXT="-----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEAUEjGVBH/AK6NjF6Q35hYSnRYZrnB+rH/BqvsRggYroM=
 -----END PUBLIC KEY-----"
 
+# P-256 supports the system LibreSSL shipped with macOS; no extra runtime.
+RGX_PUBKEY_P256="-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEaULOfSsGVUPWKP8Nb+07qRr7urPe
+lNB0IDJuHBe24qxwqk87WL9+glaWwf4g5MrFrYvGMGIKwLcRWRzTnx/yXg==
+-----END PUBLIC KEY-----"
+
 main() {
   local dest target tag version asset url sudo_cmd
 
@@ -207,33 +213,43 @@ main() {
         else die "no sha256 tool available — install coreutils or set RGX_NO_VERIFY=1"; fi
         [ "$want" = "$got" ] || die "checksum mismatch for $asset (expected $want, got $got)"
 
-        # Signature over SHA256SUMS. Current rgx releases are signed, so absence
-        # is a hard failure by default: a checksum hosted beside the artifact
-        # cannot detect a compromised download server.
+        # Verify a maintainer signature. P-256 works with macOS system
+        # LibreSSL; current OpenSSL can also verify the Ed25519 signature.
         if ! have openssl; then
           [ "${RGX_ALLOW_UNSIGNED:-0}" = "1" ] \
-            || die "openssl is required to verify the release signature (or explicitly set RGX_ALLOW_UNSIGNED=1)"
+            || die "openssl is required to verify the release signature"
           say "warning: openssl unavailable; accepting checksum-only release"
-        elif fetch "$RELEASE_BASE/$tag/SHA256SUMS.sig" "$tmp/SHA256SUMS.sig" 2>/dev/null; then
-          printf '%s' "$RGX_PUBKEY" > "$tmp/pub.pem"
-          printf '%s' "$RGX_PUBKEY_NEXT" > "$tmp/pub-next.pem"
-          if base64 -d < "$tmp/SHA256SUMS.sig" > "$tmp/sig.raw" 2>/dev/null ||
-             base64 -D < "$tmp/SHA256SUMS.sig" > "$tmp/sig.raw" 2>/dev/null; then
-            if openssl pkeyutl -verify -pubin -inkey "$tmp/pub.pem" -rawin \
-                 -in "$tmp/SHA256SUMS" -sigfile "$tmp/sig.raw" >/dev/null 2>&1 ||
-               openssl pkeyutl -verify -pubin -inkey "$tmp/pub-next.pem" -rawin \
-                 -in "$tmp/SHA256SUMS" -sigfile "$tmp/sig.raw" >/dev/null 2>&1; then
-              say "checksum ok · signature verified"
-            else
-              die "SIGNATURE INVALID for release $tag — refusing to install"
-            fi
-          else
-            die "could not decode SHA256SUMS.sig"
-          fi
         else
-          [ "${RGX_ALLOW_UNSIGNED:-0}" = "1" ] \
-            || die "release $tag has no signature — refusing checksum-only install"
-          say "warning: accepting unsigned legacy release (checksum only)"
+          local verified=0 signature_found=0
+          if fetch "$RELEASE_BASE/$tag/SHA256SUMS.sig" "$tmp/SHA256SUMS.sig" 2>/dev/null; then
+            signature_found=1
+            printf '%s' "$RGX_PUBKEY" > "$tmp/pub.pem"
+            printf '%s' "$RGX_PUBKEY_NEXT" > "$tmp/pub-next.pem"
+            if base64 -d < "$tmp/SHA256SUMS.sig" > "$tmp/sig.raw" 2>/dev/null ||
+               base64 -D < "$tmp/SHA256SUMS.sig" > "$tmp/sig.raw" 2>/dev/null; then
+              if openssl pkeyutl -verify -pubin -inkey "$tmp/pub.pem" -rawin \
+                   -in "$tmp/SHA256SUMS" -sigfile "$tmp/sig.raw" >/dev/null 2>&1 ||
+                 openssl pkeyutl -verify -pubin -inkey "$tmp/pub-next.pem" -rawin \
+                   -in "$tmp/SHA256SUMS" -sigfile "$tmp/sig.raw" >/dev/null 2>&1; then
+                verified=1
+              fi
+            fi
+          fi
+          if [ "$verified" = 0 ] && fetch "$RELEASE_BASE/$tag/SHA256SUMS.p256.sig" "$tmp/p256.sig" 2>/dev/null; then
+            signature_found=1
+            printf '%s' "$RGX_PUBKEY_P256" > "$tmp/pub-p256.pem"
+            if openssl dgst -sha256 -verify "$tmp/pub-p256.pem" -signature "$tmp/p256.sig" \
+                 "$tmp/SHA256SUMS" >/dev/null 2>&1; then
+              verified=1
+            fi
+          fi
+          if [ "$verified" = 1 ]; then
+            say "checksum ok · signature verified"
+          elif [ "$signature_found" = 0 ] && [ "${RGX_ALLOW_UNSIGNED:-0}" = "1" ]; then
+            say "warning: accepting unsigned legacy release (checksum only)"
+          else
+            die "SIGNATURE INVALID or unavailable for release $tag — refusing to install"
+          fi
         fi
       fi
 
