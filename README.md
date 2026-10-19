@@ -39,8 +39,8 @@ Hosted model access depends on the RGX model server being online. Manage/revoke
 devices at the RGX account page, or disconnect with `rgx logout`.
 
 Set `RGX_INSTALL_DIR` to customize the shell installation directory. If it is
-outside PATH, add that directory to your shell profile. Shell installations
-update with `rgx upgrade`; npm and Homebrew installations use their package manager.
+outside PATH, add that directory to your shell profile. Rerun the shell installer
+for updates; npm and Homebrew installations use their package manager.
 
 The CLI source remains private. This repository contains public distribution
 files and release assets. Other formulas in the tap are independent of RGX.
