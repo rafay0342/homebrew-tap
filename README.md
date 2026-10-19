@@ -19,12 +19,12 @@ without hosted sign-in. Noninteractive runs never open a browser.
 ## npm alternative
 
 ```sh
-npm install -g @rafay519/rgx
+npm install -g @rafaygen/rgx
 rgx
 ```
 
 npm requires Node 18+ for its launcher and selects the same native executable.
-Keep optional dependencies enabled. Update with `npm install -g @rafay519/rgx@latest`.
+Keep optional dependencies enabled. Update with `npm install -g @rafaygen/rgx@latest`.
 
 ## Homebrew alternative
 
