@@ -330,12 +330,9 @@ main() {
   say ""
   if "$dest/rgx" login --help >/dev/null 2>&1; then
     say "next: rgx  (first launch signs you in, then starts your session)"
-    say "SSH/headless: rgx login --device-code"
-    say "API keys and devices: https://rafaygen.com/rgx/"
   else
     say "next: add a provider key to ~/.rgx/.env (GROQ_API_KEY, MISTRAL_API_KEY, …), then run: rgx"
   fi
-  say "check your provider with: rgx  then  /doctor"
 }
 
 main "$@"
