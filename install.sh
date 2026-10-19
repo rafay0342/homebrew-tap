@@ -313,7 +313,7 @@ main() {
   esac
   say ""
   if "$dest/rgx" login --help >/dev/null 2>&1; then
-    say "next: rgx login  (opens your browser), then run: rgx"
+    say "next: rgx  (first launch signs you in, then starts your session)"
     say "SSH/headless: rgx login --device-code"
     say "API keys and devices: https://rafaygen.com/rgx/"
   else
